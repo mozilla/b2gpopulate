@@ -23,7 +23,7 @@ class B2GPopulate:
         self.device = GaiaDevice(self.marionette)
 
     def populate(self, contact_count=0, music_count=0, picture_count=0, video_count=0):
-        self.data_layer.remove_all_contacts(1000 * len(self.data_layer.all_contacts))
+        self.data_layer.remove_all_contacts(60000)
 
         if self.device.is_android_build and self.data_layer.media_files:
             for filename in self.data_layer.media_files:
