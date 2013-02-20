@@ -5,7 +5,7 @@
 # 2) adb forward tcp:2828 tcp:2828
 
 from optparse import OptionParser
-import os
+import pkg_resources
 
 from progressbar import Counter
 from progressbar import ProgressBar
@@ -54,7 +54,7 @@ class B2GPopulate:
             maxval=count)
         progress.start()
         self.device.push_file(
-            os.path.join(os.path.dirname(__file__), source),
+            pkg_resources.resource_filename(__name__, source),
             count,
             destination,
             progress)
