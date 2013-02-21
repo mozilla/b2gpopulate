@@ -5,7 +5,9 @@
 # 2) adb forward tcp:2828 tcp:2828
 
 from optparse import OptionParser
+import os
 import pkg_resources
+from zipfile import ZipFile
 
 from progressbar import Counter
 from progressbar import ProgressBar
@@ -23,8 +25,6 @@ class B2GPopulate:
         self.device = GaiaDevice(self.marionette)
 
     def populate(self, contact_count=0, music_count=0, picture_count=0, video_count=0):
-        self.data_layer.remove_all_contacts(60000)
-
         if self.device.is_android_build and self.data_layer.media_files:
             for filename in self.data_layer.media_files:
                 self.device.manager.removeFile('/'.join(['sdcard', filename]))
@@ -42,11 +42,24 @@ class B2GPopulate:
             self.populate_files('videos', 'VID_0001.3gp', video_count, 'DCIM/100MZLLA')
 
     def populate_contacts(self, count):
-        from gaiatest.mocks.mock_contact import MockContact
-        progress = ProgressBar(
-            widgets=['Contacts: ', '[', Counter(), '/%d] ' % count])
-        for i in progress(range(count)):
-            self.data_layer.insert_contact(MockContact())
+        progress = ProgressBar(widgets=['Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
+        progress.start()
+        for marker in [2000, 1000, 500, 200, 0]:
+            if count >= marker:
+                db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'contactsDb.zip'])))
+                db = db_zip.extract('contactsDb-%d.sqlite' % marker)
+                self.device.stop_b2g()
+                self.device.push_file(db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
+                self.device.start_b2g()
+                progress.update(marker)
+                remainder = count - marker
+                if remainder > 0:
+                    from gaiatest.mocks.mock_contact import MockContact
+                    for i in range(remainder):
+                        GaiaData(self.marionette).insert_contact(MockContact())
+                        progress.update(marker + (i + 1))
+                progress.finish()
+                break
 
     def populate_files(self, file_type, source, count, destination=''):
         progress = ProgressBar(

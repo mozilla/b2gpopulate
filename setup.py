@@ -15,7 +15,7 @@ except (OSError, IOError):
     description = ''
 
 # dependencies
-deps = ['gaiatest==0.7', 'progressbar==2.3']
+deps = ['gaiatest==0.8', 'progressbar==2.3']
 
 setup(name='b2gpopulate',
       version=version,
@@ -28,7 +28,7 @@ setup(name='b2gpopulate',
       url='https://github.com/davehunt/b2gpopulate',
       license='MPL',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-      package_data={'b2gpopulate': ['IMG_0001.jpg', 'MUS_0001.mp3', 'VID_0001.3gp']},
+      package_data={'b2gpopulate': ['resources/contactsDb.zip', 'IMG_0001.jpg', 'MUS_0001.mp3', 'VID_0001.3gp']},
       include_package_data=True,
       zip_safe=False,
       entry_points="""
