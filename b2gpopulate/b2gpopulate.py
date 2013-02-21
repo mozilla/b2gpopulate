@@ -115,7 +115,7 @@ def cli():
         type=int,
         dest='message_count',
         metavar='int',
-        help='number of messages to create')
+        help='number of messages to create. must be one of: 0, 200, 500, 1000, 2000')
     parser.add_option(
         '--music',
         action='store',

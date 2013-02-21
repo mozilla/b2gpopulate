@@ -23,4 +23,12 @@ If you anticipate modifying b2gpopulate, you can instead:
 
 ## Running
 
-    b2gpopulate --contacts=500 --music=100 --pictures=100 --videos=100
+    Usage: b2gpopulate [options]
+
+    Options:
+      -h, --help      show this help message and exit
+      --contacts=int  number of contacts to create
+      --messages=int  number of messages to create. must be one of: 0, 200, 500, 1000, 2000
+      --music=int     number of music files to create
+      --pictures=int  number of pictures to create
+      --videos=int    number of videos to create
