@@ -68,9 +68,14 @@ class B2GPopulate:
                 break
 
     def populate_messages(self, count):
+        # only allow preset db values for messages
+        db_message_counts = [0, 200, 500, 1000, 2000]
+        if not count in db_message_counts:
+            raise Exception('Invalid value for message count, use one of: %s' % ', '.join([str(count) for count in db_message_counts]))
         progress = ProgressBar(widgets=['Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
-        for marker in [2000, 1000, 500, 200, 0]:
+        db_message_counts.sort(reverse=True)
+        for marker in db_message_counts:
             if count >= marker:
                 db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'smsDb.zip'])))
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
