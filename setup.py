@@ -28,7 +28,11 @@ setup(name='b2gpopulate',
       url='https://github.com/davehunt/b2gpopulate',
       license='MPL',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-      package_data={'b2gpopulate': ['resources/contactsDb.zip', 'IMG_0001.jpg', 'MUS_0001.mp3', 'VID_0001.3gp']},
+      package_data={'b2gpopulate': [
+          'resources/contactsDb.zip',
+          'resources/IMG_0001.jpg',
+          'resources/MUS_0001.mp3',
+          'resources/VID_0001.3gp']},
       include_package_data=True,
       zip_safe=False,
       entry_points="""

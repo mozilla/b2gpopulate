@@ -33,13 +33,13 @@ class B2GPopulate:
             self.populate_contacts(contact_count)
 
         if music_count > 0:
-            self.populate_files('music', 'MUS_0001.mp3', music_count)
+            self.populate_files('music', 'MUS_0001.mp3', music_count, 'sdcard')
 
         if picture_count > 0:
-            self.populate_files('pictures', 'IMG_0001.jpg', picture_count, 'DCIM/100MZLLA')
+            self.populate_files('pictures', 'IMG_0001.jpg', picture_count, 'sdcard/DCIM/100MZLLA')
 
         if video_count > 0:
-            self.populate_files('videos', 'VID_0001.3gp', video_count, 'DCIM/100MZLLA')
+            self.populate_files('videos', 'VID_0001.3gp', video_count, 'sdcard/DCIM/100MZLLA')
 
     def populate_contacts(self, count):
         progress = ProgressBar(widgets=['Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
@@ -67,7 +67,7 @@ class B2GPopulate:
             maxval=count)
         progress.start()
         self.device.push_file(
-            pkg_resources.resource_filename(__name__, source),
+            pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', source])),
             count,
             destination,
             progress)
