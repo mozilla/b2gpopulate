@@ -55,6 +55,7 @@ class B2GPopulate:
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
+                os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
                 remainder = count - marker
@@ -75,6 +76,7 @@ class B2GPopulate:
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(db, destination='data/local/indexedDB/chrome/226660312ssm.sqlite')
+                os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
                 progress.finish()
