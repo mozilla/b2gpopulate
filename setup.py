@@ -30,6 +30,7 @@ setup(name='b2gpopulate',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       package_data={'b2gpopulate': [
           'resources/contactsDb.zip',
+          'resources/smsDb.zip',
           'resources/IMG_0001.jpg',
           'resources/MUS_0001.mp3',
           'resources/VID_0001.3gp']},
