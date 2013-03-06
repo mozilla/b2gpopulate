@@ -25,7 +25,7 @@ setup(name='b2gpopulate',
       keywords='mozilla b2g boot2gecko firefoxos populate',
       author='Dave Hunt',
       author_email='dhunt@mozilla.com',
-      url='https://github.com/davehunt/b2gpopulate',
+      url='https://github.com/mozilla/b2gpopulate',
       license='MPL',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       package_data={'b2gpopulate': [

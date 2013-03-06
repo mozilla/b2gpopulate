@@ -17,7 +17,7 @@ Installation is simple:
 
 If you anticipate modifying b2gpopulate, you can instead:
 
-    git clone git://github.com/davehunt/b2gpopulate.git
+    git clone git://github.com/mozilla/b2gpopulate.git
     cd b2gpopulate
     python setup.py develop
 
