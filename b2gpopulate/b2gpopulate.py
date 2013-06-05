@@ -27,9 +27,11 @@ class B2GPopulate:
     def populate(self, contact_count=0, message_count=0, music_count=0,
                  picture_count=0, video_count=0):
 
-        if self.device.is_android_build and self.data_layer.media_files:
-            for filename in self.data_layer.media_files:
-                self.device.manager.removeFile('/'.join(['sdcard', filename]))
+        if self.device.is_android_build:
+            media_files = self.data_layer.media_files
+            progress = ProgressBar(widgets=['Removing Media: ', '[', Counter(), '/%d] ' % len(media_files)], maxval=len(media_files))
+            for filename in progress(media_files):
+                self.device.manager.removeFile(filename)
 
         if contact_count:
             self.populate_contacts(contact_count)
@@ -188,7 +190,8 @@ def cli():
         print 'invalid value for message count, use one of: %s' % ', '.join([str(count) for count in db_message_counts])
         parser.exit()
 
-    marionette = Marionette(host='localhost', port=2828)  # TODO command line option for address
+    # TODO command line option for address
+    marionette = Marionette(host='localhost', port=2828, timeout=180000)
     marionette.start_session()
     B2GPopulate(marionette).populate(
         options.contact_count,
