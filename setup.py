@@ -27,7 +27,7 @@ setup(name='b2gpopulate',
       author_email='dhunt@mozilla.com',
       url='https://github.com/mozilla/b2gpopulate',
       license='MPL',
-      packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+      packages=['b2gpopulate'],
       package_data={'b2gpopulate': [
           'resources/contactsDb.zip',
           'resources/smsDb.zip',
