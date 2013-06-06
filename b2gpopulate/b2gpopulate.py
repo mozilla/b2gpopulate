@@ -17,6 +17,12 @@ from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
 
+class CountError(Exception):
+    """Exception for a count being incorrect"""
+    def __init__(self, type, expected, actual):
+        Exception.__init__(self, 'Incorrect number of %s. Expected %s but found %s' % (type, expected, actual))
+
+
 class B2GPopulate:
 
     def __init__(self, marionette):
@@ -29,9 +35,13 @@ class B2GPopulate:
 
         if self.device.is_android_build:
             media_files = self.data_layer.media_files
-            progress = ProgressBar(widgets=['Removing Media: ', '[', Counter(), '/%d] ' % len(media_files)], maxval=len(media_files))
-            for filename in progress(media_files):
-                self.device.manager.removeFile(filename)
+            if len(media_files) > 0:
+                progress = ProgressBar(widgets=['Removing Media: ', '[', Counter(), '/%d] ' % len(media_files)], maxval=len(media_files))
+                for filename in progress(media_files):
+                    self.device.manager.removeFile(filename)
+                media_files = self.data_layer.media_files
+            if not len(media_files) == 0:
+                raise CountError('media files', 0, len(media_files))
 
         if contact_count:
             self.populate_contacts(contact_count)
