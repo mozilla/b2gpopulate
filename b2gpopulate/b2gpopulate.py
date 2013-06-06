@@ -34,7 +34,7 @@ class B2GPopulate:
                  picture_count=0, video_count=0):
 
         if self.device.is_android_build:
-            media_files = self.data_layer.media_files
+            media_files = self.data_layer.media_files or []
             if len(media_files) > 0:
                 progress = ProgressBar(widgets=['Removing Media: ', '[', Counter(), '/%d] ' % len(media_files)], maxval=len(media_files))
                 for filename in progress(media_files):
@@ -63,7 +63,8 @@ class B2GPopulate:
         progress.start()
         for marker in [2000, 1000, 500, 200, 0]:
             if count >= marker:
-                db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'contactsDb.zip'])))
+                db_zip = ZipFile(pkg_resources.resource_filename(
+                    __name__, os.path.sep.join(['resources', 'contactsDb.zip'])))
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
@@ -89,7 +90,8 @@ class B2GPopulate:
         db_message_counts.sort(reverse=True)
         for marker in db_message_counts:
             if count >= marker:
-                db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'smsDb.zip'])))
+                db_zip = ZipFile(pkg_resources.resource_filename(
+                    __name__, os.path.sep.join(['resources', 'smsDb.zip'])))
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(db, destination='data/local/indexedDB/chrome/226660312ssm.sqlite')
@@ -102,7 +104,8 @@ class B2GPopulate:
     def populate_music(self, count, source='MUS_0001.mp3', destination='sdcard'):
         import math
         from mutagen.easyid3 import EasyID3
-        music_file = pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', source]))
+        music_file = pkg_resources.resource_filename(
+            __name__, os.path.sep.join(['resources', source]))
         local_filename = music_file.rpartition(os.path.sep)[-1]
         mp3 = EasyID3(music_file)
 
