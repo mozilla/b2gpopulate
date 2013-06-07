@@ -20,7 +20,8 @@ from gaiatest import GaiaDevice
 class CountError(Exception):
     """Exception for a count being incorrect"""
     def __init__(self, type, expected, actual):
-        Exception.__init__(self, 'Incorrect number of %s. Expected %s but found %s' % (type, expected, actual))
+        Exception.__init__(
+            self, 'Incorrect number of %s. Expected %s but found %s' % (type, expected, actual))
 
 
 class B2GPopulate:
@@ -36,7 +37,10 @@ class B2GPopulate:
         if self.device.is_android_build:
             media_files = self.data_layer.media_files or []
             if len(media_files) > 0:
-                progress = ProgressBar(widgets=['Removing Media: ', '[', Counter(), '/%d] ' % len(media_files)], maxval=len(media_files))
+                progress = ProgressBar(widgets=[
+                    'Removing Media: ',
+                    '[', Counter(),
+                    '/%d] ' % len(media_files)], maxval=len(media_files))
                 for filename in progress(media_files):
                     self.device.manager.removeFile(filename)
                 media_files = self.data_layer.media_files
@@ -59,7 +63,8 @@ class B2GPopulate:
             self.populate_files('videos', 'VID_0001.3gp', video_count, 'sdcard/DCIM/100MZLLA')
 
     def populate_contacts(self, count):
-        progress = ProgressBar(widgets=['Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
+        progress = ProgressBar(widgets=[
+            'Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         for marker in [2000, 1000, 500, 200, 0]:
             if count >= marker:
@@ -67,7 +72,8 @@ class B2GPopulate:
                     __name__, os.path.sep.join(['resources', 'contactsDb.zip'])))
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
-                self.device.push_file(db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
+                self.device.push_file(
+                    db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
                 os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
@@ -84,8 +90,10 @@ class B2GPopulate:
         # only allow preset db values for messages
         db_message_counts = [0, 200, 500, 1000, 2000]
         if not count in db_message_counts:
-            raise Exception('Invalid value for message count, use one of: %s' % ', '.join([str(count) for count in db_message_counts]))
-        progress = ProgressBar(widgets=['Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            raise Exception('Invalid value for message count, use one of: %s' %
+                            ', '.join([str(count) for count in db_message_counts]))
+        progress = ProgressBar(widgets=[
+            'Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         db_message_counts.sort(reverse=True)
         for marker in db_message_counts:
@@ -94,7 +102,8 @@ class B2GPopulate:
                     __name__, os.path.sep.join(['resources', 'smsDb.zip'])))
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
-                self.device.push_file(db, destination='data/local/indexedDB/chrome/226660312ssm.sqlite')
+                self.device.push_file(
+                    db, destination='data/local/indexedDB/chrome/226660312ssm.sqlite')
                 os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
@@ -200,7 +209,8 @@ def cli():
     db_message_counts = [0, 200, 500, 1000, 2000]
     if options.message_count and not options.message_count in db_message_counts:
         parser.print_usage()
-        print 'invalid value for message count, use one of: %s' % ', '.join([str(count) for count in db_message_counts])
+        print 'invalid value for message count, use one of: %s' % \
+              ', '.join([str(count) for count in db_message_counts])
         parser.exit()
 
     # TODO command line option for address
