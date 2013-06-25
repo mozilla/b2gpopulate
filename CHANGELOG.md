@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.7.1
+* Avoid modifying the packaged MP3 file. #2
+
 ## 0.7
 * Updated databases for latest B2G (for v1.0.1 use 0.6.1)
 * Show progress when removing media and fail if unsuccessful
