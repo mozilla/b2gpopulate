@@ -112,30 +112,37 @@ class B2GPopulate:
 
     def populate_music(self, count, source='MUS_0001.mp3', destination='sdcard'):
         import math
+        import tempfile
         from mutagen.easyid3 import EasyID3
         music_file = pkg_resources.resource_filename(
             __name__, os.path.sep.join(['resources', source]))
         local_filename = music_file.rpartition(os.path.sep)[-1]
-        mp3 = EasyID3(music_file)
 
-        tracks_per_album = 10
+        # copy the mp3 file into a temp location
+        with tempfile.NamedTemporaryFile() as local_copy:
+            local_copy.write(open(music_file).read())
+            music_file = local_copy.name
 
-        progress = ProgressBar(widgets=['Music: ', '[', Counter(), '/%d] ' % count], maxval=count)
-        progress.start()
+            mp3 = EasyID3(music_file)
 
-        for i in range(1, count + 1):
-            album = math.ceil(float(i) / float(tracks_per_album))
-            track = i - ((album - 1) * tracks_per_album)
-            mp3['title'] = 'Track %d' % track
-            mp3['artist'] = 'Artist %d' % album
-            mp3['album'] = 'Album %d' % album
-            mp3['tracknumber'] = str(track)
-            mp3.save()
-            remote_filename = '_%s.'.join(iter(local_filename.split('.'))) % i
-            self.device.push_file(music_file, 1, os.path.join(destination, remote_filename))
-            progress.update(i)
+            tracks_per_album = 10
 
-        progress.finish()
+            progress = ProgressBar(widgets=['Music: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            progress.start()
+
+            for i in range(1, count + 1):
+                album = math.ceil(float(i) / float(tracks_per_album))
+                track = i - ((album - 1) * tracks_per_album)
+                mp3['title'] = 'Track %d' % track
+                mp3['artist'] = 'Artist %d' % album
+                mp3['album'] = 'Album %d' % album
+                mp3['tracknumber'] = str(track)
+                mp3.save()
+                remote_filename = '_%s.'.join(iter(local_filename.split('.'))) % i
+                self.device.push_file(music_file, 1, os.path.join(destination, remote_filename))
+                progress.update(i)
+
+            progress.finish()
 
     def populate_files(self, file_type, source, count, destination=''):
         progress = ProgressBar(
