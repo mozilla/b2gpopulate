@@ -31,6 +31,7 @@ setup(name='b2gpopulate',
       package_data={'b2gpopulate': [
           'resources/contactsDb.zip',
           'resources/dialerDb.zip',
+          'resources/smsAttachments.zip',
           'resources/smsDb.zip',
           'resources/IMG_0001.jpg',
           'resources/MUS_0001.mp3',

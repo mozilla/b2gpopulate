@@ -9,6 +9,8 @@ from optparse import OptionParser
 import os
 import pkg_resources
 import re
+import shutil
+import tempfile
 from zipfile import ZipFile
 
 from progressbar import Counter
@@ -33,8 +35,8 @@ class B2GPopulate:
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
 
-    def populate(self, call_count=0, contact_count=0, message_count=0,
-                 music_count=0, picture_count=0, video_count=0):
+    def populate(self, call_count=None, contact_count=None, message_count=None,
+                 music_count=None, picture_count=None, video_count=None):
 
         if self.device.is_android_build:
             media_files = self.data_layer.media_files or []
@@ -55,13 +57,13 @@ class B2GPopulate:
                 self.idb_dir = candidate
                 break
 
-        if call_count:
+        if call_count is not None:
             self.populate_calls(call_count)
 
-        if contact_count:
+        if contact_count is not None:
             self.populate_contacts(contact_count)
 
-        if message_count:
+        if message_count is not None:
             self.populate_messages(message_count)
 
         if music_count > 0:
@@ -142,6 +144,15 @@ class B2GPopulate:
                 self.device.push_file(
                     db, destination='data/local/indexedDB/chrome/%s/226660312ssm.sqlite' % self.idb_dir)
                 os.remove(db)
+                if marker > 0:
+                    all_attachments_zip = ZipFile(pkg_resources.resource_filename(
+                        __name__, os.path.sep.join(['resources', 'smsAttachments.zip'])))
+                    attachments_zip = all_attachments_zip.extract('smsAttachments-%d.zip' % marker)
+                    local_path = tempfile.mkdtemp()
+                    ZipFile(attachments_zip).extractall(local_path)
+                    self.device.manager.pushDir(local_path, '/data/local/indexedDB/chrome/%s/226660312ssm' % self.idb_dir)
+                    shutil.rmtree(local_path)
+                    os.remove(attachments_zip)
                 self.device.start_b2g()
                 progress.update(marker)
                 progress.finish()
@@ -149,7 +160,6 @@ class B2GPopulate:
 
     def populate_music(self, count, source='MUS_0001.mp3', destination='sdcard'):
         import math
-        import tempfile
         from mutagen.easyid3 import EasyID3
         music_file = pkg_resources.resource_filename(
             __name__, os.path.sep.join(['resources', source]))
@@ -222,7 +232,6 @@ def cli():
         action='store',
         type=int,
         dest='music_count',
-        default=0,
         metavar='int',
         help='number of music files to create')
     parser.add_option(
@@ -251,7 +260,7 @@ def cli():
             parser.exit()
 
     counts = [getattr(options, '%s_count' % data_type) for data_type in data_types]
-    if not any([count for count in counts if count > 0]):
+    if not len([count for count in counts if count >= 0]) > 0:
         parser.print_usage()
         print 'Must specify at least one item to populate'
         parser.exit()
@@ -259,7 +268,7 @@ def cli():
     # only allow preset db values for calls and messages
     db_preset_types = ['call', 'message']
     db_preset_counts = {
-        'call': [50, 100, 200, 500],
+        'call': [0, 50, 100, 200, 500],
         'message': [0, 200, 500, 1000, 2000]}
     for data_type in db_preset_types:
         count = getattr(options, '%s_count' % data_type)
