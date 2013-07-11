@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.8
+* Push databases to appropriate idb directory
+* Add support for populating call history
+* Add support for MMS messages
+
 ## 0.7.1
 * Avoid modifying the packaged MP3 file. #2
 
