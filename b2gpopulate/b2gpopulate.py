@@ -4,6 +4,7 @@
 # 1) Install a B2G build with Marionette enabled
 # 2) adb forward tcp:2828 tcp:2828
 
+import json
 from optparse import OptionParser
 import os
 import pkg_resources
@@ -32,8 +33,8 @@ class B2GPopulate:
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
 
-    def populate(self, contact_count=0, message_count=0, music_count=0,
-                 picture_count=0, video_count=0):
+    def populate(self, call_count=0, contact_count=0, message_count=0,
+                 music_count=0, picture_count=0, video_count=0):
 
         if self.device.is_android_build:
             media_files = self.data_layer.media_files or []
@@ -54,6 +55,9 @@ class B2GPopulate:
                 self.idb_dir = candidate
                 break
 
+        if call_count:
+            self.populate_calls(call_count)
+
         if contact_count:
             self.populate_contacts(contact_count)
 
@@ -68,6 +72,32 @@ class B2GPopulate:
 
         if video_count > 0:
             self.populate_files('videos', 'VID_0001.3gp', video_count, 'sdcard/DCIM/100MZLLA')
+
+    def populate_calls(self, count):
+        # only allow preset db values for calls
+        db_call_counts = [0, 50, 100, 200, 500]
+        if not count in db_call_counts:
+            raise Exception('Invalid value for call count, use one of: %s' %
+                            ', '.join([str(count) for count in db_call_counts]))
+        progress = ProgressBar(widgets=['Calls: ', '[', Counter(), '/%d] ' % count], maxval=count)
+        progress.start()
+        db_call_counts.sort(reverse=True)
+        for marker in db_call_counts:
+            if count >= marker:
+                key = 'communications.gaiamobile.org'
+                local_id = json.loads(self.device.manager.pullFile('/data/local/webapps/webapps.json'))[key]['localId']
+                db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'dialerDb.zip'])))
+                db = db_zip.extract('dialerDb-%d.sqlite' % marker)
+                self.device.stop_b2g()
+                destination = '/'.join(['data', 'local', 'indexedDB',
+                                        '%s+f+app+++%s' % (local_id, key), self.idb_dir,
+                                        '2584670174dsitanleecreR.sqlite'])
+                self.device.push_file(db, destination=destination)
+                os.remove(db)
+                self.device.start_b2g()
+                progress.update(marker)
+                progress.finish()
+                break
 
     def populate_contacts(self, count):
         progress = ProgressBar(widgets=[
@@ -167,6 +197,13 @@ class B2GPopulate:
 def cli():
     parser = OptionParser(usage='%prog [options]')
     parser.add_option(
+        '--calls',
+        action='store',
+        type=int,
+        dest='call_count',
+        metavar='int',
+        help='number of calls to create. must be one of: 0, 50, 100, 200, 500')
+    parser.add_option(
         '--contacts',
         action='store',
         type=int,
@@ -205,32 +242,37 @@ def cli():
 
     options, args = parser.parse_args()
 
-    data_types = ['contact', 'message', 'music', 'picture', 'video']
+    data_types = ['call', 'contact', 'message', 'music', 'picture', 'video']
     for data_type in data_types:
         count = getattr(options, '%s_count' % data_type)
         if count and not count >= 0:
             parser.print_usage()
-            print 'invalid value for %s count!' % data_type
+            print 'Invalid value for %s count!' % data_type
             parser.exit()
 
     counts = [getattr(options, '%s_count' % data_type) for data_type in data_types]
     if not any([count for count in counts if count > 0]):
         parser.print_usage()
-        print 'must specify at least one item to populate'
+        print 'Must specify at least one item to populate'
         parser.exit()
 
-    # only allow preset db values for messages
-    db_message_counts = [0, 200, 500, 1000, 2000]
-    if options.message_count and not options.message_count in db_message_counts:
-        parser.print_usage()
-        print 'invalid value for message count, use one of: %s' % \
-              ', '.join([str(count) for count in db_message_counts])
-        parser.exit()
+    # only allow preset db values for calls and messages
+    db_preset_types = ['call', 'message']
+    db_preset_counts = {
+        'call': [50, 100, 200, 500],
+        'message': [0, 200, 500, 1000, 2000]}
+    for data_type in db_preset_types:
+        count = getattr(options, '%s_count' % data_type)
+        if count and not count in db_preset_counts[data_type]:
+            parser.print_usage()
+            print 'Invalid value for %s count, use one of: %s' % (data_type, ', '.join([str(count) for count in db_preset_counts[data_type]]))
+            parser.exit()
 
     # TODO command line option for address
     marionette = Marionette(host='localhost', port=2828, timeout=180000)
     marionette.start_session()
     B2GPopulate(marionette).populate(
+        options.call_count,
         options.contact_count,
         options.message_count,
         options.music_count,
