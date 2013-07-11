@@ -7,6 +7,7 @@
 from optparse import OptionParser
 import os
 import pkg_resources
+import re
 from zipfile import ZipFile
 
 from progressbar import Counter
@@ -47,6 +48,12 @@ class B2GPopulate:
             if not len(media_files) == 0:
                 raise CountError('media files', 0, len(media_files))
 
+        self.idb_dir = 'idb'
+        for candidate in self.device.manager.listFiles('/data/local/indexedDB/chrome/'):
+            if re.match('\d.*idb', candidate):
+                self.idb_dir = candidate
+                break
+
         if contact_count:
             self.populate_contacts(contact_count)
 
@@ -73,7 +80,7 @@ class B2GPopulate:
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(
-                    db, destination='data/local/indexedDB/chrome/3406066227csotncta.sqlite')
+                    db, destination='data/local/indexedDB/chrome/%s/3406066227csotncta.sqlite' % self.idb_dir)
                 os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
@@ -103,7 +110,7 @@ class B2GPopulate:
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(
-                    db, destination='data/local/indexedDB/chrome/226660312ssm.sqlite')
+                    db, destination='data/local/indexedDB/chrome/%s/226660312ssm.sqlite' % self.idb_dir)
                 os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
