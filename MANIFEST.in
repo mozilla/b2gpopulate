@@ -1,0 +1,7 @@
+include b2gpopulate/resources/contactsDb.zip
+include b2gpopulate/resources/dialerDb.zip
+include b2gpopulate/resources/smsAttachments.zip
+include b2gpopulate/resources/smsDb.zip
+include b2gpopulate/resources/IMG_0001.jpg
+include b2gpopulate/resources/MUS_0001.mp3
+include b2gpopulate/resources/VID_0001.3gp
