@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9
+* Bug 916064 - Update to support persistent storage path changes
+
 ## 0.8
 * Push databases to appropriate idb directory
 * Add support for populating call history
