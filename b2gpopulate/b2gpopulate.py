@@ -30,6 +30,8 @@ class CountError(Exception):
 
 class B2GPopulate:
 
+    PERSISTENT_STORAGE_PATH = '/data/local/storage/persistent'
+
     def __init__(self, marionette):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
@@ -52,7 +54,7 @@ class B2GPopulate:
                 raise CountError('media files', 0, len(media_files))
 
         self.idb_dir = 'idb'
-        for candidate in self.device.manager.listFiles('/data/local/indexedDB/chrome/'):
+        for candidate in self.device.manager.listFiles('/'.join([self.PERSISTENT_STORAGE_PATH, 'chrome'])):
             if re.match('\d.*idb', candidate):
                 self.idb_dir = candidate
                 break
@@ -91,7 +93,7 @@ class B2GPopulate:
                 db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'dialerDb.zip'])))
                 db = db_zip.extract('dialerDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
-                destination = '/'.join(['data', 'local', 'indexedDB',
+                destination = '/'.join([self.PERSISTENT_STORAGE_PATH,
                                         '%s+f+app+++%s' % (local_id, key), self.idb_dir,
                                         '2584670174dsitanleecreR.sqlite'])
                 self.device.push_file(db, destination=destination)
@@ -112,7 +114,9 @@ class B2GPopulate:
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(
-                    db, destination='data/local/indexedDB/chrome/%s/3406066227csotncta.sqlite' % self.idb_dir)
+                    db, destination='/'.join([
+                        self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
+                        '3406066227csotncta.sqlite']))
                 os.remove(db)
                 self.device.start_b2g()
                 progress.update(marker)
@@ -142,7 +146,9 @@ class B2GPopulate:
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(
-                    db, destination='data/local/indexedDB/chrome/%s/226660312ssm.sqlite' % self.idb_dir)
+                    db, destination='/'.join([
+                        self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
+                        '226660312ssm.sqlite']))
                 os.remove(db)
                 if marker > 0:
                     all_attachments_zip = ZipFile(pkg_resources.resource_filename(
@@ -150,7 +156,9 @@ class B2GPopulate:
                     attachments_zip = all_attachments_zip.extract('smsAttachments-%d.zip' % marker)
                     local_path = tempfile.mkdtemp()
                     ZipFile(attachments_zip).extractall(local_path)
-                    self.device.manager.pushDir(local_path, '/data/local/indexedDB/chrome/%s/226660312ssm' % self.idb_dir)
+                    self.device.manager.pushDir(local_path, '/'.join([
+                        self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
+                        '226660312ssm']))
                     shutil.rmtree(local_path)
                     os.remove(attachments_zip)
                 self.device.start_b2g()
