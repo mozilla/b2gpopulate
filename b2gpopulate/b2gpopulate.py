@@ -11,6 +11,7 @@ import pkg_resources
 import re
 import shutil
 import tempfile
+import time
 from zipfile import ZipFile
 
 from progressbar import Counter
@@ -66,14 +67,22 @@ class B2GPopulate:
     def populate(self, call_count=None, contact_count=None, message_count=None,
                  music_count=None, picture_count=None, video_count=None):
 
+        restart = any([call_count, contact_count, message_count])
+
+        if restart:
+            self.device.stop_b2g()
+
         if call_count is not None:
-            self.populate_calls(call_count)
+            self.populate_calls(call_count, restart=False)
 
         if contact_count is not None:
-            self.populate_contacts(contact_count)
+            self.populate_contacts(contact_count, restart=False)
 
         if message_count is not None:
-            self.populate_messages(message_count)
+            self.populate_messages(message_count, restart=False)
+
+        if restart:
+            self.start_b2g()
 
         if music_count > 0:
             self.populate_music(music_count)
@@ -84,7 +93,7 @@ class B2GPopulate:
         if video_count > 0:
             self.populate_videos(video_count)
 
-    def populate_calls(self, count):
+    def populate_calls(self, count, restart=True):
         # only allow preset db values for calls
         db_call_counts = [0, 50, 100, 200, 500]
         if not count in db_call_counts:
@@ -102,19 +111,21 @@ class B2GPopulate:
                 db_zip = ZipFile(pkg_resources.resource_filename(
                     __name__, os.path.sep.join(['resources', 'dialerDb.zip'])))
                 db = db_zip.extract('dialerDb-%d.sqlite' % marker)
-                self.device.stop_b2g()
+                if restart:
+                    self.device.stop_b2g()
                 destination = '/'.join([self.PERSISTENT_STORAGE_PATH,
                                         '%s+f+app+++%s' % (local_id, key),
                                         self.idb_dir,
                                         '2584670174dsitanleecreR.sqlite'])
                 self.device.push_file(db, destination=destination)
                 os.remove(db)
-                self.start_b2g()
+                if restart:
+                    self.start_b2g()
                 progress.update(marker)
                 progress.finish()
                 break
 
-    def populate_contacts(self, count):
+    def populate_contacts(self, count, restart=True):
         progress = ProgressBar(widgets=[
             'Populating Contacts: ', '[', Counter(), '/%d] ' % count],
             maxval=count)
@@ -125,13 +136,15 @@ class B2GPopulate:
                     __name__, os.path.sep.join(['resources',
                                                 'contactsDb.zip'])))
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
-                self.device.stop_b2g()
+                if restart:
+                    self.device.stop_b2g()
                 self.device.push_file(
                     db, destination='/'.join([
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
                         '3406066227csotncta.sqlite']))
                 os.remove(db)
-                self.start_b2g()
+                if restart:
+                    self.start_b2g()
                 progress.update(marker)
                 remainder = count - marker
                 if remainder > 0:
@@ -142,7 +155,7 @@ class B2GPopulate:
                 progress.finish()
                 break
 
-    def populate_messages(self, count):
+    def populate_messages(self, count, restart=True):
         # only allow preset db values for messages
         db_message_counts = [0, 200, 500, 1000, 2000]
         if not count in db_message_counts:
@@ -157,7 +170,8 @@ class B2GPopulate:
                 db_zip = ZipFile(pkg_resources.resource_filename(
                     __name__, os.path.sep.join(['resources', 'smsDb.zip'])))
                 db = db_zip.extract('smsDb-%d.sqlite' % marker)
-                self.device.stop_b2g()
+                if restart:
+                    self.device.stop_b2g()
                 self.device.push_file(
                     db, destination='/'.join([
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
@@ -177,7 +191,8 @@ class B2GPopulate:
                         '226660312ssm']))
                     shutil.rmtree(local_path)
                     os.remove(attachments_zip)
-                self.start_b2g()
+                if restart:
+                    self.start_b2g()
                 progress.update(marker)
                 progress.finish()
                 break
@@ -253,6 +268,8 @@ class B2GPopulate:
                     '/%d] ' % len(files)], maxval=len(files))
                 for filename in progress(files):
                     self.device.manager.removeFile(filename)
+                # TODO Wait for files to be deleted
+                time.sleep(5)
                 files = files_attr() or []
             if not len(files) == 0:
                 raise IncorrectCountError(
