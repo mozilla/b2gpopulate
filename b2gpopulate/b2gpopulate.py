@@ -20,6 +20,11 @@ from marionette import Marionette
 from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
+DB_PRESET_TYPES = ['call', 'message']
+DB_PRESET_COUNTS = {
+    'call': [0, 50, 100, 200, 500],
+    'message': [0, 200, 500, 1000, 2000]}
+
 
 class B2GPopulateError(Exception):
     def __init__(self, message):
@@ -35,10 +40,10 @@ class IncorrectCountError(B2GPopulateError):
 
 
 class InvalidCountError(B2GPopulateError):
-    def __init__(self, data_type, valid_values):
+    def __init__(self, data_type):
         Exception.__init__(
             self, 'Invalid value for %s count, use one of: %s' % (
-                data_type, ', '.join([str(v) for v in valid_values])))
+                data_type, DB_PRESET_COUNTS[data_type]))
 
 
 class B2GPopulate:
@@ -83,19 +88,24 @@ class B2GPopulate:
         # only allow preset db values for calls
         db_call_counts = [0, 50, 100, 200, 500]
         if not count in db_call_counts:
-            raise InvalidCountError('call', db_call_counts)
-        progress = ProgressBar(widgets=['Populating Calls: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            raise InvalidCountError('call')
+        progress = ProgressBar(widgets=[
+            'Populating Calls: ', '[', Counter(), '/%d] ' % count],
+            maxval=count)
         progress.start()
         db_call_counts.sort(reverse=True)
         for marker in db_call_counts:
             if count >= marker:
                 key = 'communications.gaiamobile.org'
-                local_id = json.loads(self.device.manager.pullFile('/data/local/webapps/webapps.json'))[key]['localId']
-                db_zip = ZipFile(pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', 'dialerDb.zip'])))
+                local_id = json.loads(self.device.manager.pullFile(
+                    '/data/local/webapps/webapps.json'))[key]['localId']
+                db_zip = ZipFile(pkg_resources.resource_filename(
+                    __name__, os.path.sep.join(['resources', 'dialerDb.zip'])))
                 db = db_zip.extract('dialerDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 destination = '/'.join([self.PERSISTENT_STORAGE_PATH,
-                                        '%s+f+app+++%s' % (local_id, key), self.idb_dir,
+                                        '%s+f+app+++%s' % (local_id, key),
+                                        self.idb_dir,
                                         '2584670174dsitanleecreR.sqlite'])
                 self.device.push_file(db, destination=destination)
                 os.remove(db)
@@ -106,12 +116,14 @@ class B2GPopulate:
 
     def populate_contacts(self, count):
         progress = ProgressBar(widgets=[
-            'Populating Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            'Populating Contacts: ', '[', Counter(), '/%d] ' % count],
+            maxval=count)
         progress.start()
         for marker in [2000, 1000, 500, 200, 0]:
             if count >= marker:
                 db_zip = ZipFile(pkg_resources.resource_filename(
-                    __name__, os.path.sep.join(['resources', 'contactsDb.zip'])))
+                    __name__, os.path.sep.join(['resources',
+                                                'contactsDb.zip'])))
                 db = db_zip.extract('contactsDb-%d.sqlite' % marker)
                 self.device.stop_b2g()
                 self.device.push_file(
@@ -134,9 +146,10 @@ class B2GPopulate:
         # only allow preset db values for messages
         db_message_counts = [0, 200, 500, 1000, 2000]
         if not count in db_message_counts:
-            raise InvalidCountError('message', db_message_counts)
+            raise InvalidCountError('message')
         progress = ProgressBar(widgets=[
-            'Populating Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            'Populating Messages: ', '[', Counter(), '/%d] ' % count],
+            maxval=count)
         progress.start()
         db_message_counts.sort(reverse=True)
         for marker in db_message_counts:
@@ -151,9 +164,12 @@ class B2GPopulate:
                         '226660312ssm.sqlite']))
                 os.remove(db)
                 if marker > 0:
-                    all_attachments_zip = ZipFile(pkg_resources.resource_filename(
-                        __name__, os.path.sep.join(['resources', 'smsAttachments.zip'])))
-                    attachments_zip = all_attachments_zip.extract('smsAttachments-%d.zip' % marker)
+                    all_attachments_zip = ZipFile(
+                        pkg_resources.resource_filename(
+                            __name__, os.path.sep.join(
+                                ['resources', 'smsAttachments.zip'])))
+                    attachments_zip = all_attachments_zip.extract(
+                        'smsAttachments-%d.zip' % marker)
                     local_path = tempfile.mkdtemp()
                     ZipFile(attachments_zip).extractall(local_path)
                     self.device.manager.pushDir(local_path, '/'.join([
@@ -183,7 +199,9 @@ class B2GPopulate:
 
             mp3 = EasyID3(music_file)
 
-            progress = ProgressBar(widgets=['Populating Music Files: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            progress = ProgressBar(widgets=[
+                'Populating Music Files: ', '[', Counter(), '/%d] ' % count],
+                maxval=count)
             progress.start()
 
             for i in range(1, count + 1):
@@ -194,8 +212,10 @@ class B2GPopulate:
                 mp3['album'] = 'Album %d' % album
                 mp3['tracknumber'] = str(track)
                 mp3.save()
-                remote_filename = '_%s.'.join(iter(local_filename.split('.'))) % i
-                self.device.push_file(music_file, 1, os.path.join(destination, remote_filename))
+                remote_filename = '_%s.'.join(
+                    iter(local_filename.split('.'))) % i
+                self.device.push_file(music_file, 1, os.path.join(destination,
+                                      remote_filename))
                 progress.update(i)
 
             progress.finish()
@@ -211,11 +231,12 @@ class B2GPopulate:
     def populate_files(self, file_type, source, count, destination=''):
         self.remove_media(file_type)
         progress = ProgressBar(
-            widgets=['Populating %s Files: ' % file_type.capitalize(), '[', Counter(), '/%d] ' % count],
-            maxval=count)
+            widgets=['Populating %s Files: ' % file_type.capitalize(), '[',
+                     Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         self.device.push_file(
-            pkg_resources.resource_filename(__name__, os.path.sep.join(['resources', source])),
+            pkg_resources.resource_filename(
+                __name__, os.path.sep.join(['resources', source])),
             count,
             destination,
             progress)
@@ -250,7 +271,8 @@ def cli():
         type=int,
         dest='call_count',
         metavar='int',
-        help='number of calls to create. must be one of: 0, 50, 100, 200, 500')
+        help='number of calls to create. must be one of: %s' %
+             DB_PRESET_COUNTS['call'])
     parser.add_option(
         '--contacts',
         action='store',
@@ -264,7 +286,8 @@ def cli():
         type=int,
         dest='message_count',
         metavar='int',
-        help='number of messages to create. must be one of: 0, 200, 500, 1000, 2000')
+        help='number of messages to create. must be one of: %s' %
+             DB_PRESET_COUNTS['message'])
     parser.add_option(
         '--music',
         action='store',
@@ -297,22 +320,18 @@ def cli():
             print 'Invalid value for %s count!' % data_type
             parser.exit()
 
-    counts = [getattr(options, '%s_count' % data_type) for data_type in data_types]
+    counts = [getattr(options, '%s_count' % data_type) for
+              data_type in data_types]
     if not len([count for count in counts if count >= 0]) > 0:
         parser.print_usage()
         print 'Must specify at least one item to populate'
         parser.exit()
 
     # only allow preset db values for calls and messages
-    db_preset_types = ['call', 'message']
-    db_preset_counts = {
-        'call': [0, 50, 100, 200, 500],
-        'message': [0, 200, 500, 1000, 2000]}
-    for data_type in db_preset_types:
+    for data_type in DB_PRESET_TYPES:
         count = getattr(options, '%s_count' % data_type)
-        if count and not count in db_preset_counts[data_type]:
-            parser.print_usage()
-            raise InvalidCountError(data_type, db_preset_counts[data_type])
+        if count and not count in DB_PRESET_COUNTS[data_type]:
+            raise InvalidCountError(data_type)
 
     # TODO command line option for address
     marionette = Marionette(host='localhost', port=2828, timeout=180000)
