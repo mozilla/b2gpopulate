@@ -37,27 +37,16 @@ class B2GPopulate:
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
 
+        if self.device.is_android_build:
+            self.idb_dir = 'idb'
+            for candidate in self.device.manager.listFiles(
+                    '/'.join([self.PERSISTENT_STORAGE_PATH, 'chrome'])):
+                if re.match('\d.*idb', candidate):
+                    self.idb_dir = candidate
+                    break
+
     def populate(self, call_count=None, contact_count=None, message_count=None,
                  music_count=None, picture_count=None, video_count=None):
-
-        if self.device.is_android_build:
-            media_files = self.data_layer.media_files or []
-            if len(media_files) > 0:
-                progress = ProgressBar(widgets=[
-                    'Removing Media: ',
-                    '[', Counter(),
-                    '/%d] ' % len(media_files)], maxval=len(media_files))
-                for filename in progress(media_files):
-                    self.device.manager.removeFile(filename)
-                media_files = self.data_layer.media_files
-            if not len(media_files) == 0:
-                raise CountError('media files', 0, len(media_files))
-
-        self.idb_dir = 'idb'
-        for candidate in self.device.manager.listFiles('/'.join([self.PERSISTENT_STORAGE_PATH, 'chrome'])):
-            if re.match('\d.*idb', candidate):
-                self.idb_dir = candidate
-                break
 
         if call_count is not None:
             self.populate_calls(call_count)
@@ -72,10 +61,10 @@ class B2GPopulate:
             self.populate_music(music_count)
 
         if picture_count > 0:
-            self.populate_files('pictures', 'IMG_0001.jpg', picture_count, 'sdcard/DCIM/100MZLLA')
+            self.populate_pictures(picture_count)
 
         if video_count > 0:
-            self.populate_files('videos', 'VID_0001.3gp', video_count, 'sdcard/DCIM/100MZLLA')
+            self.populate_videos(video_count)
 
     def populate_calls(self, count):
         # only allow preset db values for calls
@@ -83,7 +72,7 @@ class B2GPopulate:
         if not count in db_call_counts:
             raise Exception('Invalid value for call count, use one of: %s' %
                             ', '.join([str(count) for count in db_call_counts]))
-        progress = ProgressBar(widgets=['Calls: ', '[', Counter(), '/%d] ' % count], maxval=count)
+        progress = ProgressBar(widgets=['Populating Calls: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         db_call_counts.sort(reverse=True)
         for marker in db_call_counts:
@@ -98,14 +87,14 @@ class B2GPopulate:
                                         '2584670174dsitanleecreR.sqlite'])
                 self.device.push_file(db, destination=destination)
                 os.remove(db)
-                self.device.start_b2g()
+                self.start_b2g()
                 progress.update(marker)
                 progress.finish()
                 break
 
     def populate_contacts(self, count):
         progress = ProgressBar(widgets=[
-            'Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            'Populating Contacts: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         for marker in [2000, 1000, 500, 200, 0]:
             if count >= marker:
@@ -118,7 +107,7 @@ class B2GPopulate:
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
                         '3406066227csotncta.sqlite']))
                 os.remove(db)
-                self.device.start_b2g()
+                self.start_b2g()
                 progress.update(marker)
                 remainder = count - marker
                 if remainder > 0:
@@ -136,7 +125,7 @@ class B2GPopulate:
             raise Exception('Invalid value for message count, use one of: %s' %
                             ', '.join([str(count) for count in db_message_counts]))
         progress = ProgressBar(widgets=[
-            'Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            'Populating Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         db_message_counts.sort(reverse=True)
         for marker in db_message_counts:
@@ -161,12 +150,15 @@ class B2GPopulate:
                         '226660312ssm']))
                     shutil.rmtree(local_path)
                     os.remove(attachments_zip)
-                self.device.start_b2g()
+                self.start_b2g()
                 progress.update(marker)
                 progress.finish()
                 break
 
-    def populate_music(self, count, source='MUS_0001.mp3', destination='sdcard'):
+    def populate_music(self, count, source='MUS_0001.mp3',
+                       destination='sdcard', tracks_per_album=10):
+        self.remove_media('music')
+
         import math
         from mutagen.easyid3 import EasyID3
         music_file = pkg_resources.resource_filename(
@@ -180,9 +172,7 @@ class B2GPopulate:
 
             mp3 = EasyID3(music_file)
 
-            tracks_per_album = 10
-
-            progress = ProgressBar(widgets=['Music: ', '[', Counter(), '/%d] ' % count], maxval=count)
+            progress = ProgressBar(widgets=['Populating Music Files: ', '[', Counter(), '/%d] ' % count], maxval=count)
             progress.start()
 
             for i in range(1, count + 1):
@@ -199,9 +189,18 @@ class B2GPopulate:
 
             progress.finish()
 
+    def populate_pictures(self, count, source='IMG_0001.jpg',
+                          destination='sdcard/DCIM/100MZLLA'):
+        self.populate_files('picture', source, count, destination)
+
+    def populate_videos(self, count, source='VID_0001.3gp',
+                        destination='sdcard/DCIM/100MZLLA'):
+        self.populate_files('video', source, count, destination)
+
     def populate_files(self, file_type, source, count, destination=''):
+        self.remove_media(file_type)
         progress = ProgressBar(
-            widgets=['%s: ' % file_type.capitalize(), '[', Counter(), '/%d] ' % count],
+            widgets=['Populating %s Files: ' % file_type.capitalize(), '[', Counter(), '/%d] ' % count],
             maxval=count)
         progress.start()
         self.device.push_file(
@@ -210,6 +209,25 @@ class B2GPopulate:
             destination,
             progress)
         progress.finish()
+
+    def remove_media(self, file_type):
+        if self.device.is_android_build:
+            files_attr = getattr(self.data_layer, '%s_files' % file_type)
+            files = files_attr() or []
+            if len(files) > 0:
+                progress = ProgressBar(widgets=[
+                    'Removing %s Files: ' % file_type.title(),
+                    '[', Counter(),
+                    '/%d] ' % len(files)], maxval=len(files))
+                for filename in progress(files):
+                    self.device.manager.removeFile(filename)
+                files = files_attr() or []
+            if not len(files) == 0:
+                raise CountError('%s files' % file_type, 0, len(files))
+
+    def start_b2g(self):
+        self.device.start_b2g()
+        self.data_layer = GaiaData(self.marionette)
 
 
 def cli():
