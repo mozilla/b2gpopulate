@@ -21,11 +21,24 @@ from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
 
-class CountError(Exception):
+class B2GPopulateError(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
+
+class IncorrectCountError(B2GPopulateError):
     """Exception for a count being incorrect"""
-    def __init__(self, type, expected, actual):
+    def __init__(self, file_type, expected, actual):
         Exception.__init__(
-            self, 'Incorrect number of %s. Expected %s but found %s' % (type, expected, actual))
+            self, 'Incorrect number of %s. Expected %s but found %s' % (
+                file_type, expected, actual))
+
+
+class InvalidCountError(B2GPopulateError):
+    def __init__(self, data_type, valid_values):
+        Exception.__init__(
+            self, 'Invalid value for %s count, use one of: %s' % (
+                data_type, ', '.join([str(v) for v in valid_values])))
 
 
 class B2GPopulate:
@@ -70,8 +83,7 @@ class B2GPopulate:
         # only allow preset db values for calls
         db_call_counts = [0, 50, 100, 200, 500]
         if not count in db_call_counts:
-            raise Exception('Invalid value for call count, use one of: %s' %
-                            ', '.join([str(count) for count in db_call_counts]))
+            raise InvalidCountError('call', db_call_counts)
         progress = ProgressBar(widgets=['Populating Calls: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
         db_call_counts.sort(reverse=True)
@@ -122,8 +134,7 @@ class B2GPopulate:
         # only allow preset db values for messages
         db_message_counts = [0, 200, 500, 1000, 2000]
         if not count in db_message_counts:
-            raise Exception('Invalid value for message count, use one of: %s' %
-                            ', '.join([str(count) for count in db_message_counts]))
+            raise InvalidCountError('message', db_message_counts)
         progress = ProgressBar(widgets=[
             'Populating Messages: ', '[', Counter(), '/%d] ' % count], maxval=count)
         progress.start()
@@ -223,7 +234,8 @@ class B2GPopulate:
                     self.device.manager.removeFile(filename)
                 files = files_attr() or []
             if not len(files) == 0:
-                raise CountError('%s files' % file_type, 0, len(files))
+                raise IncorrectCountError(
+                    '%s files' % file_type, 0, len(files))
 
     def start_b2g(self):
         self.device.start_b2g()
@@ -300,8 +312,7 @@ def cli():
         count = getattr(options, '%s_count' % data_type)
         if count and not count in db_preset_counts[data_type]:
             parser.print_usage()
-            print 'Invalid value for %s count, use one of: %s' % (data_type, ', '.join([str(count) for count in db_preset_counts[data_type]]))
-            parser.exit()
+            raise InvalidCountError(data_type, db_preset_counts[data_type])
 
     # TODO command line option for address
     marionette = Marionette(host='localhost', port=2828, timeout=180000)
