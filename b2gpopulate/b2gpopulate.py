@@ -19,7 +19,7 @@ import mozlog
 from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
-DB_PRESET_TYPES = ['call', 'message']
+DB_PRESET_TYPES = ['call', 'contact', 'message']
 DB_PRESET_COUNTS = {
     'call': [0, 50, 100, 200, 500],
     'contact': [0, 200, 500, 1000, 2000],
@@ -101,12 +101,12 @@ class B2GPopulate(object):
 
     def populate_calls(self, count, restart=True):
         # only allow preset db values for calls
-        db_call_counts = DB_PRESET_COUNTS['call']
-        if not count in db_call_counts:
+        db_counts = DB_PRESET_COUNTS['call']
+        if not count in db_counts:
             raise InvalidCountError('call')
         self.logger.info('Populating %d calls' % count)
-        db_call_counts.sort(reverse=True)
-        for marker in db_call_counts:
+        db_counts.sort(reverse=True)
+        for marker in db_counts:
             if count >= marker:
                 key = 'communications.gaiamobile.org'
                 local_id = json.loads(self.device.manager.pullFile(
@@ -132,10 +132,13 @@ class B2GPopulate(object):
                 break
 
     def populate_contacts(self, count, restart=True):
+        # only allow preset db values for contacts
+        db_counts = DB_PRESET_COUNTS['contact']
+        if not count in db_counts:
+            raise InvalidCountError('contact')
         self.logger.info('Populating %d contacts' % count)
-        db_contact_counts = DB_PRESET_COUNTS['contact']
-        db_contact_counts.sort(reverse=True)
-        for marker in db_contact_counts:
+        db_counts.sort(reverse=True)
+        for marker in db_counts:
             if count >= marker:
                 db_zip_name = pkg_resources.resource_filename(
                     __name__, os.path.sep.join(['resources',
@@ -155,24 +158,16 @@ class B2GPopulate(object):
                 os.remove(db)
                 if restart:
                     self.start_b2g()
-                remainder = count - marker
-                if remainder > 0:
-                    from gaiatest.mocks.mock_contact import MockContact
-                    for i in range(remainder):
-                        contact = MockContact()
-                        self.logger.debug(
-                            "Inserting contact with name '%s'" % contact.name)
-                        GaiaData(self.marionette).insert_contact(MockContact())
                 break
 
     def populate_messages(self, count, restart=True):
         # only allow preset db values for messages
-        db_message_counts = DB_PRESET_COUNTS['message']
-        if not count in db_message_counts:
+        db_counts = DB_PRESET_COUNTS['message']
+        if not count in db_counts:
             raise InvalidCountError('message')
         self.logger.info('Populating %d messages' % count)
-        db_message_counts.sort(reverse=True)
-        for marker in db_message_counts:
+        db_counts.sort(reverse=True)
+        for marker in db_counts:
             if count >= marker:
                 db_zip_name = pkg_resources.resource_filename(
                     __name__, os.path.sep.join(['resources', 'smsDb.zip']))
@@ -330,7 +325,8 @@ def cli():
         type=int,
         dest='contact_count',
         metavar='int',
-        help='number of contacts to create')
+        help='number of contacts to create. must be one of: %s' %
+             DB_PRESET_COUNTS['contact'])
     parser.add_option(
         '--messages',
         action='store',
