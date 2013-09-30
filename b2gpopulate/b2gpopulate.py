@@ -283,8 +283,7 @@ class B2GPopulate(object):
 
     def remove_media(self, file_type):
         if self.device.is_android_build:
-            files_attr = getattr(self.data_layer, '%s_files' % file_type)
-            files = files_attr() or []
+            files = getattr(self.data_layer, '%s_files' % file_type) or []
             if len(files) > 0:
                 self.logger.info('Removing %d %s files' % (
                     len(files), file_type))
@@ -293,7 +292,7 @@ class B2GPopulate(object):
                     self.device.manager.removeFile(filename)
                 # TODO Wait for files to be deleted
                 time.sleep(5)
-                files = files_attr() or []
+                files = getattr(self.data_layer, '%s_files' % file_type) or []
             if not len(files) == 0:
                 raise IncorrectCountError(
                     '%s files' % file_type, 0, len(files))
