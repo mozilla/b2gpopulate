@@ -156,6 +156,22 @@ class B2GPopulate(object):
                 self.device.push_file(db, destination=destination)
                 self.logger.debug('Removing %s' % db)
                 os.remove(db)
+                if marker > 0:
+                    self.logger.debug('Adding contact pictures')
+                    pictures_zip_name = pkg_resources.resource_filename(
+                        __name__, os.path.sep.join(
+                            ['resources', 'contactsPictures.zip']))
+                    temp = tempfile.mkdtemp()
+                    self.logger.debug('Extracting %s to %s' % (
+                        pictures_zip_name, temp))
+                    ZipFile(pictures_zip_name).extractall(temp)
+                    destination = '/'.join([
+                        self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
+                        '3406066227csotncta'])
+                    self.logger.debug('Pushing %s to %s' % (temp, destination))
+                    self.device.manager.pushDir(temp, destination)
+                    self.logger.debug('Removing %s' % temp)
+                    shutil.rmtree(temp)
                 if restart:
                     self.start_b2g()
                 break
@@ -193,18 +209,17 @@ class B2GPopulate(object):
                         attachments_zip_name, all_attachments_zip_name))
                     attachments_zip = ZipFile(
                         all_attachments_zip_name).extract(attachments_zip_name)
-                    local_path = tempfile.mkdtemp()
-                    self.logger.debug('Extracing %s to %s' % (
-                        attachments_zip, local_path))
-                    ZipFile(attachments_zip).extractall(local_path)
+                    temp = tempfile.mkdtemp()
+                    self.logger.debug('Extracting %s to %s' % (
+                        attachments_zip, temp))
+                    ZipFile(attachments_zip).extractall(temp)
                     destination = '/'.join([
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
                         '226660312ssm'])
-                    self.logger.debug('Pushing %s to %s' % (
-                        local_path, destination))
-                    self.device.manager.pushDir(local_path, destination)
-                    self.logger.debug('Removing %s' % local_path)
-                    shutil.rmtree(local_path)
+                    self.logger.debug('Pushing %s to %s' % (temp, destination))
+                    self.device.manager.pushDir(temp, destination)
+                    self.logger.debug('Removing %s' % temp)
+                    shutil.rmtree(temp)
                     self.logger.debug('Removing %s' % attachments_zip)
                     os.remove(attachments_zip)
                 if restart:
