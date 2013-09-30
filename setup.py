@@ -15,7 +15,9 @@ except (OSError, IOError):
     description = ''
 
 # dependencies
-deps = ['gaiatest==0.12', 'progressbar==2.3', 'mutagen']
+deps = ['gaiatest==0.12',
+        'mozlog==1.3',
+        'mutagen']
 
 setup(name='b2gpopulate',
       version=version,
