@@ -1,3 +1,4 @@
+include b2gpopulate/resources/calendarDb.zip
 include b2gpopulate/resources/contactsDb.zip
 include b2gpopulate/resources/contactsPictures.zip
 include b2gpopulate/resources/dialerDb.zip

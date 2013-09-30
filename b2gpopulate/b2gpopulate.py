@@ -19,10 +19,11 @@ import mozlog
 from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
-DB_PRESET_TYPES = ['call', 'contact', 'message']
+DB_PRESET_TYPES = ['call', 'contact', 'event', 'message']
 DB_PRESET_COUNTS = {
     'call': [0, 50, 100, 200, 500],
     'contact': [0, 200, 500, 1000, 2000],
+    'event': [0, 900, 1300, 2400, 3200],
     'message': [0, 200, 500, 1000, 2000]}
 
 
@@ -70,7 +71,8 @@ class B2GPopulate(object):
                     break
 
     def populate(self, call_count=None, contact_count=None, message_count=None,
-                 music_count=None, picture_count=None, video_count=None):
+                 music_count=None, picture_count=None, video_count=None,
+                 event_count=None):
 
         restart = any([call_count, contact_count, message_count])
 
@@ -83,6 +85,9 @@ class B2GPopulate(object):
 
         if contact_count is not None:
             self.populate_contacts(contact_count, restart=False)
+
+        if event_count is not None:
+            self.populate_events(event_count, restart=False)
 
         if message_count is not None:
             self.populate_messages(message_count, restart=False)
@@ -172,6 +177,39 @@ class B2GPopulate(object):
                     self.device.manager.pushDir(temp, destination)
                     self.logger.debug('Removing %s' % temp)
                     shutil.rmtree(temp)
+                if restart:
+                    self.start_b2g()
+                break
+
+    def populate_events(self, count, restart=True):
+        # only allow preset db values for events
+        db_counts = DB_PRESET_COUNTS['event']
+        if not count in db_counts:
+            raise InvalidCountError('event')
+        self.logger.info('Populating %d events' % count)
+        db_counts.sort(reverse=True)
+        for marker in db_counts:
+            if count >= marker:
+                key = 'calendar.gaiamobile.org'
+                local_id = json.loads(self.device.manager.pullFile(
+                    '/data/local/webapps/webapps.json'))[key]['localId']
+                db_zip_name = pkg_resources.resource_filename(
+                    __name__, os.path.sep.join(['resources',
+                                                'calendarDb.zip']))
+                db_name = 'calendarDb-%d.sqlite' % marker
+                self.logger.debug('Extracting %s from %s' % (
+                    db_name, db_zip_name))
+                db = ZipFile(db_zip_name).extract(db_name)
+                if restart:
+                    self.device.stop_b2g()
+                destination = '/'.join([self.PERSISTENT_STORAGE_PATH,
+                                        '%s+f+app+++%s' % (local_id, key),
+                                        self.idb_dir,
+                                        '125582036br2agd-nceal.sqlite'])
+                self.logger.debug('Pushing %s to %s' % (db, destination))
+                self.device.push_file(db, destination=destination)
+                self.logger.debug('Removing %s' % db)
+                os.remove(db)
                 if restart:
                     self.start_b2g()
                 break
@@ -342,6 +380,14 @@ def cli():
         help='number of contacts to create. must be one of: %s' %
              DB_PRESET_COUNTS['contact'])
     parser.add_option(
+        '--events',
+        action='store',
+        type=int,
+        dest='event_count',
+        metavar='int',
+        help='number of events to create. must be one of: %s' %
+             DB_PRESET_COUNTS['event'])
+    parser.add_option(
         '--messages',
         action='store',
         type=int,
@@ -373,7 +419,8 @@ def cli():
 
     options, args = parser.parse_args()
 
-    data_types = ['call', 'contact', 'message', 'music', 'picture', 'video']
+    data_types = ['call', 'contact', 'event', 'message', 'music', 'picture',
+                  'video']
     for data_type in data_types:
         count = getattr(options, '%s_count' % data_type)
         if count and not count >= 0:
@@ -403,7 +450,8 @@ def cli():
         options.message_count,
         options.music_count,
         options.picture_count,
-        options.video_count)
+        options.video_count,
+        options.event_count)
 
 
 if __name__ == '__main__':
