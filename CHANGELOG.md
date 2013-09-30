@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.10
+* Add support for populating calendar events
+* Add contacts pictures
+* Only allow preset database values for contacts
+* Replace progressbar with mozlog
+* Allow use of b2gpopulate as a module
+* Only restart once when pushing multiple databases
+* Add custom exceptions
+* Remove type specific media files before populating instead of all media files
+
 ## 0.9
 * Bug 916064 - Update to support persistent storage path changes
 
