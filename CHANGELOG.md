@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.11
+* Bumped gaiatest dependency to 0.19
+
 ## 0.10
 * Add support for populating calendar events
 * Add contacts pictures
