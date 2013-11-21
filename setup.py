@@ -16,7 +16,7 @@ except (OSError, IOError):
 
 # dependencies
 deps = ['gaiatest==0.19',
-        'mozlog==1.3',
+        'mozlog>=1.4',
         'mutagen']
 
 setup(name='b2gpopulate',
