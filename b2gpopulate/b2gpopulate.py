@@ -136,11 +136,14 @@ class B2GPopulate(object):
                     self.start_b2g()
                 break
 
-    def populate_contacts(self, count, restart=True):
+    def populate_contacts(self, count, restart=True, include_pictures=True):
         # only allow preset db values for contacts
         db_counts = DB_PRESET_COUNTS['contact']
         if not count in db_counts:
             raise InvalidCountError('contact')
+        self.device.manager.removeDir('/'.join([
+            self.PERSISTENT_STORAGE_PATH, 'chrome',
+            self.idb_dir, '*csotncta*']))
         self.logger.info('Populating %d contacts' % count)
         db_counts.sort(reverse=True)
         for marker in db_counts:
@@ -161,7 +164,7 @@ class B2GPopulate(object):
                 self.device.push_file(db, destination=destination)
                 self.logger.debug('Removing %s' % db)
                 os.remove(db)
-                if marker > 0:
+                if marker > 0 and include_pictures:
                     self.logger.debug('Adding contact pictures')
                     pictures_zip_name = pkg_resources.resource_filename(
                         __name__, os.path.sep.join(
