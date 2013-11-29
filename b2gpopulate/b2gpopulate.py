@@ -51,15 +51,15 @@ class B2GPopulate(object):
 
     PERSISTENT_STORAGE_PATH = '/data/local/storage/persistent'
 
+    handler = mozlog.StreamHandler()
+    handler.setFormatter(mozlog.MozFormatter(include_timestamp=True))
+    logger = mozlog.getLogger('B2GPopulate', handler)
+
     def __init__(self, marionette, log_level='INFO'):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
 
-        # Set up logging
-        handler = mozlog.StreamHandler()
-        handler.setFormatter(mozlog.MozFormatter(include_timestamp=True))
-        self.logger = mozlog.getLogger(self.__class__.__name__, handler)
         self.logger.setLevel(getattr(mozlog, log_level.upper()))
 
         if self.device.is_android_build:
