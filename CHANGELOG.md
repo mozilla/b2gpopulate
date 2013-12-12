@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.12
+* Bumped gaiatest dependency to 0.20
+* Add option to skip contact pictures
+* Allow b2gpopulate to be instantiated multiple times
+* Replaced custom log formatter with timestamped mozlog formatter
+
 ## 0.11
 * Bumped gaiatest dependency to 0.19
 
