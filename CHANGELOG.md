@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.13
+* Bumped gaiatest dependency to 0.21.2
+
 ## 0.12
 * Bumped gaiatest dependency to 0.20
 * Add option to skip contact pictures
