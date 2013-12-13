@@ -15,6 +15,7 @@ import time
 from zipfile import ZipFile
 
 from marionette import Marionette
+import mozdevice
 import mozlog
 from gaiatest import GaiaData
 from gaiatest import GaiaDevice
@@ -59,6 +60,8 @@ class B2GPopulate(object):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
+        dm = mozdevice.DeviceManagerADB()
+        self.device.add_device_manager(dm)
 
         self.logger.setLevel(getattr(mozlog, log_level.upper()))
 
