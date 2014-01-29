@@ -56,7 +56,7 @@ class B2GPopulate(object):
     handler.setFormatter(mozlog.MozFormatter(include_timestamp=True))
     logger = mozlog.getLogger('B2GPopulate', handler)
 
-    def __init__(self, marionette, log_level='INFO'):
+    def __init__(self, marionette, log_level='INFO', start_timeout=60):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
@@ -64,6 +64,7 @@ class B2GPopulate(object):
         self.device.add_device_manager(dm)
 
         self.logger.setLevel(getattr(mozlog, log_level.upper()))
+        self.start_timeout = start_timeout
 
         if self.device.is_android_build:
             self.idb_dir = 'idb'
@@ -343,7 +344,7 @@ class B2GPopulate(object):
 
     def start_b2g(self):
         self.logger.debug('Starting B2G')
-        self.device.start_b2g()
+        self.device.start_b2g(self.start_timeout * 1000)  # convert to ms
         self.data_layer = GaiaData(self.marionette)
 
 
@@ -356,6 +357,14 @@ def cli():
         default='INFO',
         metavar='str',
         help='threshold for log output (default: %default)')
+    parser.add_option(
+        '--start-timeout',
+        action='store',
+        type=int,
+        dest='start_timeout',
+        default=60,
+        metavar='int',
+        help='b2g start timeout in seconds (default: %default)')
     parser.add_option(
         '--calls',
         action='store',
@@ -437,7 +446,7 @@ def cli():
     # TODO command line option for address
     marionette = Marionette(host='localhost', port=2828, timeout=180000)
     marionette.start_session()
-    B2GPopulate(marionette, options.log_level).populate(
+    B2GPopulate(marionette, options.log_level, options.start_timeout).populate(
         options.call_count,
         options.contact_count,
         options.message_count,
