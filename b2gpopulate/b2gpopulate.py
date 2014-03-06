@@ -344,7 +344,7 @@ class B2GPopulate(object):
 
     def start_b2g(self):
         self.logger.debug('Starting B2G')
-        self.device.start_b2g(self.start_timeout * 1000)  # convert to ms
+        self.device.start_b2g(self.start_timeout)
         self.data_layer = GaiaData(self.marionette)
 
 
