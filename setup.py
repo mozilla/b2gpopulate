@@ -5,7 +5,7 @@
 import os
 from setuptools import setup
 
-version = '0.20'
+version = '0.21'
 
 # get documentation from the README
 try:
@@ -15,7 +15,7 @@ except (OSError, IOError):
     description = ''
 
 # dependencies
-deps = ['gaiatest==0.21.9',
+deps = ['gaiatest==0.21.10',
         'mozdevice>=0.30',
         'mozlog>=1.4',
         'mutagen']
