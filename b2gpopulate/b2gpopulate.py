@@ -271,8 +271,7 @@ class B2GPopulate(object):
                     self.start_b2g()
                 break
 
-    def populate_music(self, count, source='MUS_0001.mp3',
-                       destination='sdcard', tracks_per_album=10):
+    def populate_music(self, count, source='MUS_0001.mp3', tracks_per_album=10):
         self.remove_media('music')
 
         import math
@@ -303,20 +302,22 @@ class B2GPopulate(object):
                 mp3.save()
                 remote_filename = '_%s.'.join(
                     iter(local_filename.split('.'))) % i
-                remote_destination = os.path.join(destination, remote_filename)
+                remote_destination = '/'.join([
+                    self.device.manager.deviceRoot, remote_filename])
                 self.logger.debug('Pushing %s to %s' % (
                     music_file, remote_destination))
                 self.device.push_file(music_file, 1, remote_destination)
 
     def populate_pictures(self, count, source='IMG_0001.jpg',
-                          destination='sdcard/DCIM/100MZLLA'):
+                          destination='DCIM/100MZLLA'):
         self.populate_files('picture', source, count, destination)
 
     def populate_videos(self, count, source='VID_0001.3gp',
-                        destination='sdcard/DCIM/100MZLLA'):
+                        destination='DCIM/100MZLLA'):
         self.populate_files('video', source, count, destination)
 
     def populate_files(self, file_type, source, count, destination=''):
+        destination = '/'.join([self.device.manager.deviceRoot, destination])
         self.remove_media(file_type)
 
         self.logger.info('Populating %d %s files' % (count, file_type))
