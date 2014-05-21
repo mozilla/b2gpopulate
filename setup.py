@@ -5,7 +5,7 @@
 import os
 from setuptools import setup
 
-version = '0.22'
+version = '0.23'
 
 # get documentation from the README
 try:
