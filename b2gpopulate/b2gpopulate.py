@@ -11,7 +11,6 @@ import pkg_resources
 import re
 import shutil
 import tempfile
-import time
 from zipfile import ZipFile
 
 from marionette import Marionette
@@ -333,15 +332,21 @@ class B2GPopulate(object):
             if len(files) > 0:
                 self.logger.info('Removing %d %s files' % (
                     len(files), file_type))
+                volumes = self.get_volumes()
                 for filename in files:
-                    self.logger.debug('Removing %s' % filename)
-                    self.device.manager.removeFile(filename)
-                # TODO Wait for files to be deleted
-                time.sleep(5)
+                    # Get the actual location of the file
+                    parts = filename.strip('/').partition('/')
+                    path = '/'.join([volumes[parts[0]], parts[2]])
+                    self.logger.debug('Removing %s' % path)
+                    self.device.manager.removeFile(path)
                 files = getattr(self.data_layer, '%s_files' % file_type) or []
             if not len(files) == 0:
                 raise IncorrectCountError(
                     '%s files' % file_type, 0, len(files))
+
+    def get_volumes(self):
+        vlist = self.device.manager.shellCheckOutput(['vdc', 'volume', 'list'])
+        return dict([v.split()[2:4] for v in vlist.splitlines()[:-1]])
 
     def start_b2g(self):
         self.logger.debug('Starting B2G')
