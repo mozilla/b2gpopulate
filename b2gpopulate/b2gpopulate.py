@@ -345,8 +345,13 @@ class B2GPopulate(object):
                     '%s files' % file_type, 0, len(files))
 
     def get_volumes(self):
+        version = int(self.device.manager.shellCheckOutput(
+            ['getprop', 'ro.build.version.sdk']))
+        # Version > 17 introduced a new column
+        start = version > 17 and 2 or 1
+        end = start + 2
         vlist = self.device.manager.shellCheckOutput(['vdc', 'volume', 'list'])
-        return dict([v.split()[2:4] for v in vlist.splitlines()[:-1]])
+        return dict([v.split()[start:end] for v in vlist.splitlines()[:-1]])
 
     def start_b2g(self):
         self.logger.debug('Starting B2G')
