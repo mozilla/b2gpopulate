@@ -55,11 +55,12 @@ class B2GPopulate(object):
     handler.setFormatter(mozlog.MozFormatter(include_timestamp=True))
     logger = mozlog.getLogger('B2GPopulate', handler)
 
-    def __init__(self, marionette, log_level='INFO', start_timeout=60):
+    def __init__(self, marionette, log_level='INFO', start_timeout=60,
+                 device_serial=None):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
         self.device = GaiaDevice(self.marionette)
-        dm = mozdevice.DeviceManagerADB()
+        dm = mozdevice.DeviceManagerADB(deviceSerial=device_serial)
         self.device.add_device_manager(dm)
 
         self.logger.setLevel(getattr(mozlog, log_level.upper()))
@@ -362,6 +363,19 @@ class B2GPopulate(object):
 def cli():
     parser = OptionParser(usage='%prog [options]')
     parser.add_option(
+        '--address',
+        action='store',
+        dest='address',
+        default='localhost:2828',
+        metavar='str',
+        help='address of marionette server (default: %default)')
+    parser.add_option(
+        '--device-serial',
+        action='store',
+        dest='device_serial',
+        metavar='str',
+        help='serial identifier of device to target')
+    parser.add_option(
         '--log-level',
         action='store',
         dest='log_level',
@@ -454,10 +468,18 @@ def cli():
         if count and not count in DB_PRESET_COUNTS[data_type]:
             raise InvalidCountError(data_type)
 
-    # TODO command line option for address
-    marionette = Marionette(host='localhost', port=2828, timeout=180000)
+    try:
+        host, port = options.address.split(':')
+    except ValueError:
+        raise B2GPopulateError('--address must be in the format host:port')
+
+    marionette = Marionette(host=host, port=int(port), timeout=180000)
     marionette.start_session()
-    B2GPopulate(marionette, options.log_level, options.start_timeout).populate(
+    b2gpopulate = B2GPopulate(marionette,
+                              log_level=options.log_level,
+                              start_timeout=options.start_timeout,
+                              device_serial=options.device_serial)
+    b2gpopulate.populate(
         options.call_count,
         options.contact_count,
         options.message_count,
