@@ -5,7 +5,7 @@
 import os
 from setuptools import setup
 
-version = '0.25'
+version = '0.1'
 
 # get documentation from the README
 try:
@@ -15,12 +15,12 @@ except (OSError, IOError):
     description = ''
 
 # dependencies
-deps = ['gaiatest>=0.22',
+deps = ['gaiatest-v1.4',
         'mozdevice>=0.34',
         'mozlog>=1.4',
         'mutagen']
 
-setup(name='b2gpopulate',
+setup(name='b2gpopulate-v1.4',
       version=version,
       description="Content population tool for B2G",
       long_description=description,
