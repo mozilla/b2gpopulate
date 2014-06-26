@@ -59,16 +59,15 @@ class B2GPopulate(object):
                  device_serial=None):
         self.marionette = marionette
         self.data_layer = GaiaData(self.marionette)
-        self.device = GaiaDevice(self.marionette)
         dm = mozdevice.DeviceManagerADB(deviceSerial=device_serial)
-        self.device.add_device_manager(dm)
+        self.device = GaiaDevice(self.marionette, manager=dm)
 
         self.logger.setLevel(getattr(mozlog, log_level.upper()))
         self.start_timeout = start_timeout
 
         if self.device.is_android_build:
             self.idb_dir = 'idb'
-            for candidate in self.device.manager.listFiles(
+            for candidate in self.device.file_manager.list_items(
                     '/'.join([self.PERSISTENT_STORAGE_PATH, 'chrome'])):
                 if re.match('\d.*idb', candidate):
                     self.idb_dir = candidate
@@ -133,7 +132,7 @@ class B2GPopulate(object):
                                         self.idb_dir,
                                         '2584670174dsitanleecreR.sqlite'])
                 self.logger.debug('Pushing %s to %s' % (db, destination))
-                self.device.push_file(db, destination=destination)
+                self.device.manager.pushFile(db, destination)
                 self.logger.debug('Removing %s' % db)
                 os.remove(db)
                 if restart:
@@ -145,7 +144,7 @@ class B2GPopulate(object):
         db_counts = DB_PRESET_COUNTS['contact']
         if not count in db_counts:
             raise InvalidCountError('contact')
-        self.device.manager.removeDir('/'.join([
+        self.device.file_manager.remove('/'.join([
             self.PERSISTENT_STORAGE_PATH, 'chrome',
             self.idb_dir, '*csotncta*']))
         self.logger.info('Populating %d contacts' % count)
@@ -165,7 +164,7 @@ class B2GPopulate(object):
                     self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
                     '3406066227csotncta.sqlite'])
                 self.logger.debug('Pushing %s to %s' % (db, destination))
-                self.device.push_file(db, destination=destination)
+                self.device.manager.pushFile(db, destination)
                 self.logger.debug('Removing %s' % db)
                 os.remove(db)
                 if marker > 0 and include_pictures:
@@ -214,7 +213,7 @@ class B2GPopulate(object):
                                         self.idb_dir,
                                         '125582036br2agd-nceal.sqlite'])
                 self.logger.debug('Pushing %s to %s' % (db, destination))
-                self.device.push_file(db, destination=destination)
+                self.device.manager.pushFile(db, destination)
                 self.logger.debug('Removing %s' % db)
                 os.remove(db)
                 if restart:
@@ -242,7 +241,7 @@ class B2GPopulate(object):
                     self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
                     '226660312ssm.sqlite'])
                 self.logger.debug('Pushing %s to %s' % (db, destination))
-                self.device.push_file(db, destination=destination)
+                self.device.manager.pushFile(db, destination)
                 os.remove(db)
                 if marker > 0:
                     self.logger.debug('Adding message attachments')
@@ -271,7 +270,8 @@ class B2GPopulate(object):
                     self.start_b2g()
                 break
 
-    def populate_music(self, count, source='MUS_0001.mp3', tracks_per_album=10):
+    def populate_music(self, count, source='MUS_0001.mp3',
+                       tracks_per_album=10):
         self.remove_media('music')
 
         import math
@@ -306,7 +306,7 @@ class B2GPopulate(object):
                     self.device.manager.deviceRoot, remote_filename])
                 self.logger.debug('Pushing %s to %s' % (
                     music_file, remote_destination))
-                self.device.push_file(music_file, 1, remote_destination)
+                self.device.manager.pushFile(music_file, remote_destination)
 
     def populate_pictures(self, count, source='IMG_0001.jpg',
                           destination='DCIM/100MZLLA'):
@@ -325,7 +325,7 @@ class B2GPopulate(object):
             __name__, os.path.sep.join(['resources', source]))
         self.logger.debug('Pushing %d copies of %s to %s' % (
             count, source_file, destination))
-        self.device.push_file(source_file, count, destination)
+        self.device.file_manager.push_file(source_file, destination, count)
 
     def remove_media(self, file_type):
         if self.device.is_android_build:
@@ -339,7 +339,7 @@ class B2GPopulate(object):
                     parts = filename.strip('/').partition('/')
                     path = '/'.join([volumes[parts[0]], parts[2]])
                     self.logger.debug('Removing %s' % path)
-                    self.device.manager.removeFile(path)
+                    self.device.file_manager.remove(path)
                 files = getattr(self.data_layer, '%s_files' % file_type) or []
             if not len(files) == 0:
                 raise IncorrectCountError(
