@@ -19,12 +19,48 @@ import mozlog
 from gaiatest import GaiaData
 from gaiatest import GaiaDevice
 
-DB_PRESET_TYPES = ['call', 'contact', 'event', 'message']
-DB_PRESET_COUNTS = {
-    'call': [0, 50, 100, 200, 500],
-    'contact': [0, 200, 500, 1000, 2000],
-    'event': [0, 900, 1300, 2400, 3200],
-    'message': [0, 200, 500, 1000, 2000]}
+WORKLOADS = {
+    'empty': {
+        'call': 0,
+        'contact': 0,
+        'message': 0,
+        'music': 0,
+        'picture': 0,
+        'video': 0,
+        'event': 0},
+    'light': {
+        'call': 50,
+        'contact': 200,
+        'message': 200,
+        'music': 20,
+        'picture': 20,
+        'video': 5,
+        'event': 900},
+    'medium': {
+        'call': 100,
+        'contact': 500,
+        'message': 500,
+        'music': 50,
+        'picture': 50,
+        'video': 10,
+        'event': 1300},
+    'heavy': {
+        'call': 200,
+        'contact': 1000,
+        'message': 1000,
+        'music': 100,
+        'picture': 100,
+        'video': 20,
+        'event': 2400},
+    'x-heavy': {
+        'call': 500,
+        'contact': 2000,
+        'message': 2000,
+        'music': 250,
+        'picture': 250,
+        'video': 50,
+        'event': 3200}
+}
 
 
 class B2GPopulateError(Exception):
@@ -44,7 +80,8 @@ class InvalidCountError(B2GPopulateError):
     def __init__(self, data_type):
         Exception.__init__(
             self, 'Invalid value for %s count, use one of: %s' % (
-                data_type, DB_PRESET_COUNTS[data_type]))
+                data_type,
+                sorted([WORKLOADS[k][data_type] for k in WORKLOADS.keys()])))
 
 
 class B2GPopulate(object):
@@ -109,8 +146,8 @@ class B2GPopulate(object):
 
     def populate_calls(self, count, restart=True):
         # only allow preset db values for calls
-        db_counts = DB_PRESET_COUNTS['call']
-        if not count in db_counts:
+        db_counts = [WORKLOADS[k]['call'] for k in WORKLOADS.keys()]
+        if count not in db_counts:
             raise InvalidCountError('call')
         self.logger.info('Populating %d calls' % count)
         db_counts.sort(reverse=True)
@@ -141,8 +178,8 @@ class B2GPopulate(object):
 
     def populate_contacts(self, count, restart=True, include_pictures=True):
         # only allow preset db values for contacts
-        db_counts = DB_PRESET_COUNTS['contact']
-        if not count in db_counts:
+        db_counts = [WORKLOADS[k]['contact'] for k in WORKLOADS.keys()]
+        if count not in db_counts:
             raise InvalidCountError('contact')
         self.device.file_manager.remove('/'.join([
             self.PERSISTENT_STORAGE_PATH, 'chrome',
@@ -189,8 +226,8 @@ class B2GPopulate(object):
 
     def populate_events(self, count, restart=True):
         # only allow preset db values for events
-        db_counts = DB_PRESET_COUNTS['event']
-        if not count in db_counts:
+        db_counts = [WORKLOADS[k]['event'] for k in WORKLOADS.keys()]
+        if count not in db_counts:
             raise InvalidCountError('event')
         self.logger.info('Populating %d events' % count)
         db_counts.sort(reverse=True)
@@ -222,8 +259,8 @@ class B2GPopulate(object):
 
     def populate_messages(self, count, restart=True):
         # only allow preset db values for messages
-        db_counts = DB_PRESET_COUNTS['message']
-        if not count in db_counts:
+        db_counts = [WORKLOADS[k]['message'] for k in WORKLOADS.keys()]
+        if count not in db_counts:
             raise InvalidCountError('message')
         self.logger.info('Populating %d messages' % count)
         db_counts.sort(reverse=True)
@@ -397,7 +434,7 @@ def cli():
         dest='call_count',
         metavar='int',
         help='number of calls to create. must be one of: %s' %
-             DB_PRESET_COUNTS['call'])
+             sorted([WORKLOADS[k]['call'] for k in WORKLOADS.keys()]))
     parser.add_option(
         '--contacts',
         action='store',
@@ -405,7 +442,7 @@ def cli():
         dest='contact_count',
         metavar='int',
         help='number of contacts to create. must be one of: %s' %
-             DB_PRESET_COUNTS['contact'])
+             sorted([WORKLOADS[k]['contact'] for k in WORKLOADS.keys()]))
     parser.add_option(
         '--events',
         action='store',
@@ -413,7 +450,7 @@ def cli():
         dest='event_count',
         metavar='int',
         help='number of events to create. must be one of: %s' %
-             DB_PRESET_COUNTS['event'])
+             sorted([WORKLOADS[k]['event'] for k in WORKLOADS.keys()]))
     parser.add_option(
         '--messages',
         action='store',
@@ -421,7 +458,7 @@ def cli():
         dest='message_count',
         metavar='int',
         help='number of messages to create. must be one of: %s' %
-             DB_PRESET_COUNTS['message'])
+             sorted([WORKLOADS[k]['message'] for k in WORKLOADS.keys()]))
     parser.add_option(
         '--music',
         action='store',
@@ -443,11 +480,17 @@ def cli():
         dest='video_count',
         metavar='int',
         help='number of videos to create')
+    parser.add_option(
+        '--workload',
+        action='store',
+        dest='workload',
+        metavar='str',
+        choices=sorted(WORKLOADS, key=WORKLOADS.__getitem__),
+        help='type of workload to create. must be one of: %s' %
+             sorted(WORKLOADS, key=WORKLOADS.__getitem__))
 
     options, args = parser.parse_args()
-
-    data_types = ['call', 'contact', 'event', 'message', 'music', 'picture',
-                  'video']
+    data_types = WORKLOADS['empty'].keys()
     for data_type in data_types:
         count = getattr(options, '%s_count' % data_type)
         if count and not count >= 0:
@@ -458,14 +501,21 @@ def cli():
     counts = [getattr(options, '%s_count' % data_type) for
               data_type in data_types]
     if not len([count for count in counts if count >= 0]) > 0:
-        parser.print_usage()
-        print 'Must specify at least one item to populate'
-        parser.exit()
+        if options.workload is None:
+            parser.print_usage()
+            print 'Must specify at least one item to populate'
+            parser.exit()
+    else:
+        if options.workload is not None:
+            parser.print_usage()
+            print 'Please specify either a workload or individual values'
+            parser.exit()
 
-    # only allow preset db values for calls and messages
-    for data_type in DB_PRESET_TYPES:
+    # only allow preset values for calls, messages, contacts, events
+    for data_type in ['call', 'message', 'contact', 'event']:
         count = getattr(options, '%s_count' % data_type)
-        if count and not count in DB_PRESET_COUNTS[data_type]:
+        preset_counts = [WORKLOADS[k][data_type] for k in WORKLOADS.keys()]
+        if count and count not in preset_counts:
             raise InvalidCountError(data_type)
 
     try:
@@ -479,14 +529,25 @@ def cli():
                               log_level=options.log_level,
                               start_timeout=options.start_timeout,
                               device_serial=options.device_serial)
-    b2gpopulate.populate(
-        options.call_count,
-        options.contact_count,
-        options.message_count,
-        options.music_count,
-        options.picture_count,
-        options.video_count,
-        options.event_count)
+
+    if options.workload is None:
+        b2gpopulate.populate(
+            options.call_count,
+            options.contact_count,
+            options.message_count,
+            options.music_count,
+            options.picture_count,
+            options.video_count,
+            options.event_count)
+    else:
+        b2gpopulate.populate(
+            WORKLOADS[options.workload]['call'],
+            WORKLOADS[options.workload]['contact'],
+            WORKLOADS[options.workload]['message'],
+            WORKLOADS[options.workload]['music'],
+            WORKLOADS[options.workload]['picture'],
+            WORKLOADS[options.workload]['video'],
+            WORKLOADS[options.workload]['event'])
 
 
 if __name__ == '__main__':
