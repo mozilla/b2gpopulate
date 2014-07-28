@@ -115,7 +115,8 @@ class B2GPopulate(object):
                  music_count=None, picture_count=None, video_count=None,
                  event_count=None):
 
-        restart = any([call_count, contact_count, message_count])
+        restart = any([i is not None for i in [
+            call_count, contact_count, event_count, message_count]])
 
         if restart:
             self.logger.debug('Stopping B2G')
@@ -136,13 +137,13 @@ class B2GPopulate(object):
         if restart:
             self.start_b2g()
 
-        if music_count > 0:
+        if music_count is not None:
             self.populate_music(music_count)
 
-        if picture_count > 0:
+        if picture_count is not None:
             self.populate_pictures(picture_count)
 
-        if video_count > 0:
+        if video_count is not None:
             self.populate_videos(video_count)
 
     def populate_calls(self, count, restart=True):
@@ -327,7 +328,7 @@ class B2GPopulate(object):
             mp3 = EasyID3(music_file)
             album_count = math.ceil(float(count) / tracks_per_album)
             self.logger.info('Populating %d music files (%d album%s)' % (
-                count, album_count, 's' if album_count > 1 else ''))
+                count, album_count, '' if album_count == 1 else 's'))
 
             for i in range(1, count + 1):
                 album = math.ceil(float(i) / float(tracks_per_album))
@@ -358,11 +359,12 @@ class B2GPopulate(object):
         self.remove_media(file_type)
 
         self.logger.info('Populating %d %s files' % (count, file_type))
-        source_file = pkg_resources.resource_filename(
-            __name__, os.path.sep.join(['resources', source]))
-        self.logger.debug('Pushing %d copies of %s to %s' % (
-            count, source_file, destination))
-        self.device.push_file(source_file, count, destination)
+        if count > 0:
+            source_file = pkg_resources.resource_filename(
+                __name__, os.path.sep.join(['resources', source]))
+            self.logger.debug('Pushing %d copies of %s to %s' % (
+                count, source_file, destination))
+            self.device.push_file(source_file, count, destination)
 
     def remove_media(self, file_type):
         if self.device.is_android_build:
