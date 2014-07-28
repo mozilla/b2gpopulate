@@ -15,7 +15,7 @@ except (OSError, IOError):
     description = ''
 
 # dependencies
-deps = ['gaiatest>=0.22',
+deps = ['gaiatest>=0.26',
         'mozdevice>=0.34',
         'mozlog>=1.4',
         'mutagen']
