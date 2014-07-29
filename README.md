@@ -34,3 +34,4 @@ If you anticipate modifying b2gpopulate, you can instead:
       --music=int     number of music files to create
       --pictures=int  number of pictures to create
       --videos=int    number of videos to create
+      --workload=str  workload type to create. must be one of: ['light', 'medium', 'heavy', 'x-heavy']
