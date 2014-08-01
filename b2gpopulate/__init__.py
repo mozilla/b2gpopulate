@@ -4,3 +4,4 @@
 
 from b2gpopulate import B2GPopulate
 from b2gpopulate import B2GPopulateError
+from b2gpopulate import WORKLOADS
