@@ -216,7 +216,7 @@ class B2GPopulate(object):
                     ZipFile(pictures_zip_name).extractall(temp)
                     destination = '/'.join([
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
-                        '3406066227csotncta'])
+                        '3406066227csotncta.files'])
                     self.logger.debug('Pushing %s to %s' % (temp, destination))
                     self.device.manager.pushDir(temp, destination)
                     self.logger.debug('Removing %s' % temp)
@@ -297,7 +297,7 @@ class B2GPopulate(object):
                     ZipFile(attachments_zip).extractall(temp)
                     destination = '/'.join([
                         self.PERSISTENT_STORAGE_PATH, 'chrome', self.idb_dir,
-                        '226660312ssm'])
+                        '226660312ssm.files'])
                     self.logger.debug('Pushing %s to %s' % (temp, destination))
                     self.device.manager.pushDir(temp, destination)
                     self.logger.debug('Removing %s' % temp)
