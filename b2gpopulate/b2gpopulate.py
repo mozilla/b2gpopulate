@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import pkg_resources
+import posixpath
 import re
 import shutil
 import sys
@@ -108,7 +109,7 @@ class B2GPopulate(object):
         if self.device.is_android_build:
             self.idb_dir = 'idb'
             for candidate in self.device.file_manager.list_items(
-                    '/'.join([self.STORAGE_PATH, 'permanent', 'chrome'])):
+                    posixpath.join(self.STORAGE_PATH, 'permanent', 'chrome')):
                 if re.match('\d.*idb', candidate):
                     self.idb_dir = candidate
                     break
@@ -168,10 +169,10 @@ class B2GPopulate(object):
                 db = ZipFile(db_zip_name).extract(db_name)
                 if restart:
                     self.device.stop_b2g()
-                destination = '/'.join([self.STORAGE_PATH, 'default',
-                                        '%s+f+app+++%s' % (local_id, key),
-                                        self.idb_dir,
-                                        '2584670174dsitanleecreR.sqlite'])
+                destination = posixpath.join(self.STORAGE_PATH, 'default',
+                                             '%s+f+app+++%s' % (local_id, key),
+                                             self.idb_dir,
+                                             '2584670174dsitanleecreR.sqlite')
                 self._logger.debug('Pushing %s to %s' % (db, destination))
                 self.device.manager.pushFile(db, destination)
                 self._logger.debug('Removing %s' % db)
@@ -185,8 +186,8 @@ class B2GPopulate(object):
         db_counts = [WORKLOADS[k]['contact'] for k in WORKLOADS.keys()]
         if count not in db_counts:
             raise InvalidCountError('contact')
-        path = '/'.join([self.STORAGE_PATH, 'permanent', 'chrome', self.idb_dir])
-        self.device.file_manager.remove('/'.join([path, '*csotncta*']))
+        path = posixpath.join(self.STORAGE_PATH, 'permanent', 'chrome', self.idb_dir)
+        self.device.file_manager.remove(posixpath.join(path, '*csotncta*'))
         self._logger.info('Populating %d contacts' % count)
         db_counts.sort(reverse=True)
         for marker in db_counts:
@@ -200,7 +201,7 @@ class B2GPopulate(object):
                 db = ZipFile(db_zip_name).extract(db_name)
                 if restart:
                     self.device.stop_b2g()
-                destination = '/'.join([path, '3406066227csotncta.sqlite'])
+                destination = posixpath.join(path, '3406066227csotncta.sqlite')
                 self._logger.debug('Pushing %s to %s' % (db, destination))
                 self.device.manager.pushFile(db, destination)
                 self._logger.debug('Removing %s' % db)
@@ -214,7 +215,7 @@ class B2GPopulate(object):
                     self._logger.debug('Extracting %s to %s' % (
                         pictures_zip_name, temp))
                     ZipFile(pictures_zip_name).extractall(temp)
-                    destination = '/'.join([path, '3406066227csotncta.files'])
+                    destination = posixpath.join(path, '3406066227csotncta.files')
                     self._logger.debug('Pushing %s to %s' % (temp, destination))
                     self.device.manager.pushDir(temp, destination)
                     self._logger.debug('Removing %s' % temp)
@@ -244,10 +245,10 @@ class B2GPopulate(object):
                 db = ZipFile(db_zip_name).extract(db_name)
                 if restart:
                     self.device.stop_b2g()
-                destination = '/'.join([self.STORAGE_PATH, 'default',
-                                        '%s+f+app+++%s' % (local_id, key),
-                                        self.idb_dir,
-                                        '125582036br2agd-nceal.sqlite'])
+                destination = posixpath.join(self.STORAGE_PATH, 'default',
+                                             '%s+f+app+++%s' % (local_id, key),
+                                             self.idb_dir,
+                                             '125582036br2agd-nceal.sqlite')
                 self._logger.debug('Pushing %s to %s' % (db, destination))
                 self.device.manager.pushFile(db, destination)
                 self._logger.debug('Removing %s' % db)
@@ -273,8 +274,8 @@ class B2GPopulate(object):
                 db = ZipFile(db_zip_name).extract(db_name)
                 if restart:
                     self.device.stop_b2g()
-                path = '/'.join([self.STORAGE_PATH, 'permanent', 'chrome', self.idb_dir])
-                destination = '/'.join([path, '226660312ssm.sqlite'])
+                path = posixpath.join(self.STORAGE_PATH, 'permanent', 'chrome', self.idb_dir)
+                destination = posixpath.join(path, '226660312ssm.sqlite')
                 self._logger.debug('Pushing %s to %s' % (db, destination))
                 self.device.manager.pushFile(db, destination)
                 os.remove(db)
@@ -292,7 +293,7 @@ class B2GPopulate(object):
                     self._logger.debug('Extracting %s to %s' % (
                         attachments_zip, temp))
                     ZipFile(attachments_zip).extractall(temp)
-                    destination = '/'.join([path, '226660312ssm.files'])
+                    destination = posixpath.join(path, '226660312ssm.files')
                     self._logger.debug('Pushing %s to %s' % (temp, destination))
                     self.device.manager.pushDir(temp, destination)
                     self._logger.debug('Removing %s' % temp)
@@ -335,8 +336,8 @@ class B2GPopulate(object):
                 mp3.save()
                 remote_filename = '_%s.'.join(
                     iter(local_filename.split('.'))) % i
-                remote_destination = '/'.join([
-                    self.device.manager.deviceRoot, remote_filename])
+                remote_destination = posixpath.join(
+                    self.device.manager.deviceRoot, remote_filename)
                 self._logger.debug('Pushing %s to %s' % (
                     music_file, remote_destination))
                 self.device.manager.pushFile(music_file, remote_destination)
@@ -350,7 +351,7 @@ class B2GPopulate(object):
         self.populate_files('video', source, count, destination)
 
     def populate_files(self, file_type, source, count, destination=''):
-        destination = '/'.join([self.device.manager.deviceRoot, destination])
+        destination = posixpath.join(self.device.manager.deviceRoot, destination)
         self.remove_media(file_type)
 
         self._logger.info('Populating %d %s files' % (count, file_type))
@@ -370,8 +371,8 @@ class B2GPopulate(object):
                 volumes = self.get_volumes()
                 for filename in files:
                     # Get the actual location of the file
-                    parts = filename.strip('/').partition('/')
-                    path = '/'.join([volumes[parts[0]], parts[2]])
+                    parts = filename.strip(posixpath.sep).partition(posixpath.sep)
+                    path = posixpath.join(volumes[parts[0]], parts[2])
                     self._logger.debug('Removing %s' % path)
                     self.device.file_manager.remove(path)
                 files = getattr(self.data_layer, '%s_files' % file_type) or []
